@@ -11,6 +11,10 @@ All notable changes to SkillEvaluator are documented in this file.
   and paths to per-skill report directories.
 - Catalog `validate` accepts `--workers N` to validate skills in parallel child
   processes (default 1 preserves the serial per-skill pipeline view).
+- Local judge-validation workflows for versioned trace corpora, independent
+  annotation forms, exact-prompt replay, and loopback model recordings. Reports
+  distinguish unresolved labels and operational failures from scored outcomes,
+  measure agreement and repeatability, and label synthetic demonstrations explicitly.
 - `SKILL_EVAL_MODEL_CATALOG_ALLOW_HTTP_HOSTS` names hosts whose model catalog may
   be read over plain HTTP. Catalog reads still require HTTPS for every other
   non-loopback host. Entries match one whole host as written, with no name

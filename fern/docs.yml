@@ -65,6 +65,9 @@ navigation:
       - page: Reports & Results
         path: ../docs/reports.mdx
         slug: reports
+      - page: Judge Validation
+        path: ../docs/judge-validation.mdx
+        slug: judge-validation
       - page: "BENCHMARK.md Rollout and Backfill"
         path: ../docs/benchmark-rollout.mdx
         slug: benchmark-rollout

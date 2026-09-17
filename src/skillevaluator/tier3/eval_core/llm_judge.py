@@ -690,6 +690,8 @@ def judge_accuracy(
     question: str,
     ground_truth: str,
     agent_text: str,
+    *,
+    caller: Any = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Run the 5-criterion accuracy judge. Returns ``{"score": float, "reason": str, ...}``."""
@@ -705,7 +707,7 @@ def judge_accuracy(
     parsed, error, _provenance = _call_validated_json_judge(
         prompt,
         _accuracy_payload_error,
-        call_public_llm,
+        caller if caller is not None else call_public_llm,
         _extract_json,
         **kwargs,
     )
@@ -777,6 +779,8 @@ def judge_goal_accuracy(
     ground_truth: str,
     agent_text: str,
     tool_summary: str = "",
+    *,
+    caller: Any = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Run the goal accuracy judge (two-step: infer goal, compare outcome)."""
@@ -793,7 +797,7 @@ def judge_goal_accuracy(
     parsed, error, _provenance = _call_validated_json_judge(
         prompt,
         _goal_payload_error,
-        call_public_llm,
+        caller if caller is not None else call_public_llm,
         _extract_json,
         **kwargs,
     )
@@ -868,6 +872,8 @@ _BEHAVIOR_RETRY_REMINDER = (
 def judge_behavior_check(
     conversation_text: str,
     expected_behaviors: list[str],
+    *,
+    caller: Any = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Run the behavior check LLM judge."""
@@ -882,7 +888,8 @@ def judge_behavior_check(
     )
     kwargs.setdefault("max_tokens", BEHAVIOR_JUDGE_MAX_TOKENS)
 
-    content, error = call_public_llm(prompt, **kwargs)
+    call = caller if caller is not None else call_public_llm
+    content, error = call(prompt, **kwargs)
     if error:
         return _judge_error(f"LLM judge error: {error}", results=[])
 
@@ -895,7 +902,7 @@ def judge_behavior_check(
     retry_error = None
     if score is None:
         # One retry max, with an explicit machine-readable-output reminder.
-        retry_content, retry_error = call_public_llm(prompt + _BEHAVIOR_RETRY_REMINDER, **kwargs)
+        retry_content, retry_error = call(prompt + _BEHAVIOR_RETRY_REMINDER, **kwargs)
         if not retry_error:
             parsed = _parse_judge_object(retry_content)
             attempts.append((retry_content or "", parsed))

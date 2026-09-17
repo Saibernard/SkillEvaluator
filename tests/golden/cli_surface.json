@@ -733,6 +733,318 @@
         }
       ]
     },
+    "judge-validation": {
+      "commands": {
+        "annotate": {
+          "params": [
+            {
+              "name": "corpus_path",
+              "opts": [
+                "corpus_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "reviewer",
+              "opts": [
+                "--reviewer"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "text"
+            },
+            {
+              "name": "rubric_version",
+              "opts": [
+                "--rubric-version"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "text"
+            },
+            {
+              "name": "out",
+              "opts": [
+                "--out"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "file"
+            }
+          ]
+        },
+        "demo": {
+          "params": [
+            {
+              "name": "out_dir",
+              "opts": [
+                "--out-dir"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "directory"
+            }
+          ]
+        },
+        "merge-annotations": {
+          "params": [
+            {
+              "name": "corpus_path",
+              "opts": [
+                "corpus_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "annotation_paths",
+              "opts": [
+                "annotation_paths"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "out",
+              "opts": [
+                "--out"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "file"
+            }
+          ]
+        },
+        "prepare": {
+          "params": [
+            {
+              "name": "corpus_path",
+              "opts": [
+                "corpus_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "model",
+              "opts": [
+                "--model"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "text"
+            },
+            {
+              "name": "model_revision",
+              "opts": [
+                "--model-revision"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "text"
+            },
+            {
+              "default": "3",
+              "name": "repeats",
+              "opts": [
+                "--repeats"
+              ],
+              "param_type": "option",
+              "type": "integer range"
+            },
+            {
+              "choices": [
+                "all",
+                "development",
+                "heldout"
+              ],
+              "default": "all",
+              "name": "split",
+              "opts": [
+                "--split"
+              ],
+              "param_type": "option"
+            },
+            {
+              "default": "0.5",
+              "name": "threshold",
+              "opts": [
+                "--threshold"
+              ],
+              "param_type": "option",
+              "type": "float range"
+            },
+            {
+              "default": "4096",
+              "name": "max_tokens",
+              "opts": [
+                "--max-tokens"
+              ],
+              "param_type": "option",
+              "type": "integer range"
+            },
+            {
+              "name": "temperature",
+              "opts": [
+                "--temperature"
+              ],
+              "param_type": "option",
+              "type": "float range"
+            },
+            {
+              "name": "out",
+              "opts": [
+                "--out"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "file"
+            }
+          ]
+        },
+        "replay": {
+          "params": [
+            {
+              "name": "corpus_path",
+              "opts": [
+                "corpus_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "plan_path",
+              "opts": [
+                "plan_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "recordings_path",
+              "opts": [
+                "recordings_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "annotation_path",
+              "opts": [
+                "--annotations"
+              ],
+              "param_type": "option",
+              "type": "file"
+            },
+            {
+              "name": "out",
+              "opts": [
+                "--out"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "markdown_path",
+              "opts": [
+                "--markdown"
+              ],
+              "param_type": "option",
+              "type": "file"
+            }
+          ]
+        },
+        "run-local": {
+          "params": [
+            {
+              "name": "corpus_path",
+              "opts": [
+                "corpus_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "plan_path",
+              "opts": [
+                "plan_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "endpoint",
+              "opts": [
+                "--endpoint"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "text"
+            },
+            {
+              "default": "200",
+              "name": "max_calls",
+              "opts": [
+                "--max-calls"
+              ],
+              "param_type": "option",
+              "type": "integer range"
+            },
+            {
+              "default": "60.0",
+              "name": "timeout",
+              "opts": [
+                "--timeout"
+              ],
+              "param_type": "option",
+              "type": "float range"
+            },
+            {
+              "name": "out",
+              "opts": [
+                "--out"
+              ],
+              "param_type": "option",
+              "required": true,
+              "type": "file"
+            }
+          ]
+        },
+        "validate": {
+          "params": [
+            {
+              "name": "corpus_path",
+              "opts": [
+                "corpus_path"
+              ],
+              "param_type": "argument",
+              "required": true,
+              "type": "file"
+            },
+            {
+              "name": "annotation_path",
+              "opts": [
+                "--annotations"
+              ],
+              "param_type": "option",
+              "type": "file"
+            }
+          ]
+        }
+      },
+      "params": []
+    },
     "lint-scripts": {
       "params": [
         {

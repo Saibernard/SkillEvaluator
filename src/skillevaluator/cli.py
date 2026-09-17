@@ -19,6 +19,7 @@ import click
 
 from skillevaluator import __version__
 from skillevaluator.cli_help import GroupedOption, RichGroup
+from skillevaluator.judge_validation.cli import judge_validation
 from skillevaluator.logging_config import setup_logging
 from skillevaluator.models.result import ValidationResult
 from skillevaluator.reporting.console_ui import (
@@ -165,6 +166,7 @@ _TOP_LEVEL_COMMAND_HELP_GROUPS = (
         "Tier 3 · Live evaluation",
         ("create-eval-dataset", "init-custom-grader", "init-harbor-task", "compare", "view", "harbor-view"),
     ),
+    ("Evaluation analysis", ("judge-validation",)),
     ("Expert aliases", ("tier1", "tier2", "tier3")),
 )
 
@@ -2472,6 +2474,7 @@ tier3.add_command(compare, "compare")
 tier3.add_command(view, "view")
 tier3.add_command(doctor, "doctor")
 cli.add_command(harbor_view, "harbor-view")
+cli.add_command(judge_validation)
 
 
 if __name__ == "__main__":

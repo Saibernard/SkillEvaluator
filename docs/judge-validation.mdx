@@ -1,0 +1,200 @@
+---
+title: "Judge Validation"
+description: "Measure judge agreement, errors, and repeatability against independently annotated local traces."
+---
+
+The `judge-validation` commands replay the production accuracy, goal accuracy,
+and behavior judges against a versioned corpus. They retain exact prompts and
+raw model replies, separate failures from valid scores, and compare results
+with independently supplied annotations.
+
+This measures judges, not agent performance or aggregate Skill Lift. The
+built-in demonstration uses synthetic traces, synthetic labels, and injected
+judge responses. It verifies the measurement pipeline; it does not establish
+the quality of a real model or replace a human-reviewed study.
+
+## Run the offline demonstration
+
+```bash
+skillevaluator judge-validation demo --out-dir ./judge-demo
+```
+
+This creates 60 deterministic examples across six toy task families and 540
+planned judge trials. The generated corpus includes development and held-out
+skills, with-skill and without-skill conditions, and explicit source metadata.
+Fault injection produces false passes, false failures, fluctuating repeated
+scores, malformed replies, transport errors, and missing recordings.
+
+The directory contains `corpus.json`, `annotations.json`, `plan.json`,
+`recordings.json`, `report.json`, and `report.md`. The evidence status is
+`synthetic_demonstration`. The two synthetic oracle IDs are not human reviewers.
+
+Replay the saved artifacts without making model calls:
+
+```bash
+skillevaluator judge-validation replay \
+  ./judge-demo/corpus.json ./judge-demo/plan.json ./judge-demo/recordings.json \
+  --annotations ./judge-demo/annotations.json \
+  --out ./judge-demo/replayed.json --markdown ./judge-demo/replayed.md
+```
+
+Output files are created exclusively. Choose a fresh path for each experiment;
+existing source data and earlier reports are never overwritten.
+
+## Assemble a corpus
+
+Use the generated corpus as a schema example, replacing synthetic records with
+traces and artifacts you have the right to use. Each case contains:
+
+| Field | Meaning |
+|---|---|
+| `id` | Unique trajectory/case identifier |
+| `skill_id`, `family_id`, `task_id` | Stable grouping and leakage-prevention identities |
+| `agent`, `condition` | Agent identity and `with_skill` or `without_skill` |
+| `split` | `development` or `heldout` |
+| `source` | `kind` (`synthetic` or `captured`), source `reference`, and `revision` |
+| `question`, `ground_truth` | Request and independently established expected answer/outcome |
+| `agent_text` | Observed answer and relevant produced-artifact evidence |
+| `conversation`, `tool_summary` | Retained evidence supplied to behavior and goal judges |
+| `expected_behaviors` | Observable workflow requirements |
+
+Keep artifacts as explicit evidence in the corpus; this tool does not execute
+paths or commands supplied by traces. Preserve the original agent logs separately
+and identify their revision or digest in `source`. Reviewers must be able to
+inspect the actual produced artifacts, not just an agent's claim of success.
+
+The corpus header records its ID, version, license, and description. Unknown
+fields, duplicate IDs, duplicate task/agent/condition entries, ambiguous JSON
+keys, nonfinite scores, and Boolean scores are rejected. Skills, task families,
+and tasks cannot cross the development/heldout boundary. Identical retained
+traces also cannot cross that boundary under different names. This prevents
+obvious leakage; near-duplicate tasks still require human review.
+
+An empty agent response remains an evaluable outcome. Missing ground truth
+prevents accuracy/goal evaluation; an empty expected-behavior list prevents
+behavior evaluation. Those cases receive `missing_reference`, not a perfect
+score inherited from a production skip convention.
+
+```bash
+skillevaluator judge-validation validate ./corpus.json
+```
+
+## Collect independent annotations
+
+Define and version the rubric before judging outcomes. For the initial study:
+
+- Label accuracy against the five production criteria, documenting which facts
+  and artifacts support each decision.
+- Label goal accuracy from observable task completion rather than confident prose.
+- Label behavior compliance as the proportion of specified behaviors supported
+  by the trace. Keep workflow compliance separate from goal completion.
+- Use `null` when evidence is insufficient. Explain uncertainty in `rationale`.
+
+Create separate unfilled forms for two human reviewers:
+
+```bash
+skillevaluator judge-validation annotate ./corpus.json \
+  --reviewer reviewer-a --rubric-version rubric-1 --out ./reviewer-a.json
+skillevaluator judge-validation annotate ./corpus.json \
+  --reviewer reviewer-b --rubric-version rubric-1 --out ./reviewer-b.json
+```
+
+Reviewers fill in numeric scores and rationales independently before seeing
+each other's labels or any model scores. Where feasible, conceal agent/model
+and condition metadata in the material presented to reviewers. The annotation
+files do not contain other reviewers' labels. Identity strings and the declared
+`human` origin do not authenticate reviewer identity or independence.
+
+```bash
+skillevaluator judge-validation merge-annotations ./corpus.json \
+  ./reviewer-a.json ./reviewer-b.json --out ./annotations.json
+skillevaluator judge-validation validate ./corpus.json --annotations ./annotations.json
+```
+
+Two distinct reviewers must agree on the exact score for automatic consensus.
+Uncertain, singly reviewed, and disagreeing labels remain unresolved. A separate
+`adjudications` entry can resolve a case/metric after two initial reviewers have
+submitted ratings. It records the adjudicator ID, score, and rationale without
+discarding the original disagreement. Inter-reviewer agreement always uses the
+original ratings. Synthetic and human annotation sets cannot be merged together.
+
+## Freeze an experiment and use a local model
+
+```bash
+skillevaluator judge-validation prepare ./corpus.json \
+  --model local-model --model-revision MODEL_DIGEST \
+  --split heldout --repeats 3 --threshold 0.5 --out ./plan.json
+skillevaluator judge-validation run-local ./corpus.json ./plan.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --max-calls 400 --timeout 60 --out ./recordings.json
+```
+
+The model server must already be running locally and expose non-streaming
+chat completions. No model is downloaded or server started automatically. The
+runner accepts only literal loopback HTTP addresses with an explicit port and
+the `/v1/chat/completions` or `/chat/completions` path. Hostnames, hosted
+endpoints, redirects, URL credentials, query parameters, inherited proxies, and
+provider API credentials are not used. The operator remains responsible for
+the local server's configuration and whether that server itself forwards data.
+
+`prepare` exports the exact initial and possible retry prompts without reading
+annotations or invoking a model. It records model identity, declared model
+revision, generation settings, threshold, repeats, dataset digest, evaluator
+version/revision, worktree state, and implementation digest. `--temperature`
+is optional and omitted when unspecified. `--max-tokens` defaults to 4096.
+Use separate plans for different models. Response model identities are retained;
+recordings reporting different model identities cannot be pooled together.
+
+`--max-calls` limits the worst-case number of requests, including retries, before
+any call is made. The default is 200. Runtime errors are retained in the
+recordings and make `run-local` exit 1. A malformed judge reply is preserved
+and retried using the production judge's existing retry and salvage policy.
+Recorded response bodies are bounded, and arbitrary server error bodies are not
+copied into diagnostics. Runs currently save the completed batch at the end;
+use small batches to limit loss if the process is interrupted.
+
+You can import previously saved responses using the `judge-recordings/1` schema.
+Each recording identifies the case, metric, and repetition and retains every
+used call's exact prompt digest, content or transport error, elapsed time, and
+optional returned model identity. Set `origin` to `imported` and document the
+producer. Missing planned records are reported, but extra/duplicate records,
+mismatched prompts, missing required retries, and unused responses are rejected.
+
+Restore the recorded implementation revision to replay an older experiment.
+Code changes require a new plan; the tool will not silently reinterpret an
+old plan with different parsing or scoring behavior. No change is made to
+normal Tier 3 score policies, historical scores, or publication gates.
+
+## Interpret the report
+
+Reports separate metric, split, condition, and agent. They include:
+
+- Counts of planned, scored, missing, and failed trials.
+- Label availability, consensus, unresolved disagreement, and adjudication.
+- False-pass and false-fail counts with explicit denominators.
+- Mean absolute score error, exact/decision agreement, and Cohen's kappa.
+- Original reviewer-pair agreement before adjudication.
+- Repeated-score ranges, standard deviations, and decision flips.
+- Case IDs for disagreements and operational failures.
+
+Primary agreement uses repetition zero once per case. Additional repeats
+measure variability; they do not increase the primary sample size or allow
+selection of the most favorable result. Repeatability requires every planned
+repeat to score; incomplete cases are explicitly excluded and counted.
+
+False-pass rate uses successfully judged, resolved reference-negative cases as
+its denominator. False-fail rate similarly uses reference-positive cases.
+Inspect label coverage and errors alongside both rates. An empty denominator
+is `null`, never zero. Constant labels can make kappa undefined; that is also
+`null`.
+
+The existing Wilson interval implementation supplies descriptive case-level
+intervals. Related tasks can violate its independence assumption, so those
+intervals are not evidence of generalization to unseen skills. Report skill
+and task diversity, labeling limitations, missing cases, and failure analysis.
+Rubric scores are not calibrated probabilities. Changes should be developed on
+the development partition and assessed on an untouched held-out partition.
+
+Inputs and outputs are capped at 32 MiB, corpora at 5,000 cases, experiment plans
+at 20,000 trials, repeats at 20, and annotation sets at 32 reviewers overall
+and 8 per case/metric. Partition larger studies into explicit experiments.
